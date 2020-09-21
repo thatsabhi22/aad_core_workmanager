@@ -76,6 +76,15 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        //Below is the chaining of the work request one after the another
+        // here we can implement data exchange too
+        // output data from one execution can be input data for the another work request
+        // https://www.youtube.com/watch?v=-prIcKMlrYQ
+        WorkManager.getInstance(this).beginWith(request)
+                .then(request)
+                .then(request)
+                .enqueue();
+
 
 
 
