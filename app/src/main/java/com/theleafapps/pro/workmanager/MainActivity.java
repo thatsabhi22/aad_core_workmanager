@@ -1,22 +1,34 @@
 package com.theleafapps.pro.workmanager;
 
 import android.os.Bundle;
+import android.util.Log;
+import android.view.View;
+import android.widget.Button;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.Observer;
 import androidx.work.Constraints;
 import androidx.work.Data;
 import androidx.work.NetworkType;
 import androidx.work.OneTimeWorkRequest;
+import androidx.work.PeriodicWorkRequest;
+import androidx.work.WorkInfo;
 import androidx.work.WorkManager;
 
 import java.util.concurrent.TimeUnit;
 
 public class MainActivity extends AppCompatActivity {
 
+    private static final String TAG = "MainActivity";
+
+    Button cancel_job;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        cancel_job = findViewById(R.id.cancel_task_btn);
 
         Data data = new Data.Builder()
                 .putInt("number", 15)
@@ -28,6 +40,7 @@ public class MainActivity extends AppCompatActivity {
                 .setRequiresCharging(true)
                 .build();
 
+        // Below creates a one time request i.e. the the job has to be done once only
         OneTimeWorkRequest request = new OneTimeWorkRequest.Builder(SampleWorker.class)
                 .setInputData(data)
                 .setConstraints(constraints)
@@ -38,6 +51,33 @@ public class MainActivity extends AppCompatActivity {
                 .addTag("download")
                 .build();
 
-        WorkManager.getInstance(this).enqueue(request);
+//        WorkManager.getInstance(this).enqueue(request);
+
+        // Below created the Periodic request i.e. the job will run periodically in intervals specified
+        final PeriodicWorkRequest pRequest = new PeriodicWorkRequest.Builder(SampleWorker.class,10,TimeUnit.SECONDS)
+                .setInputData(data)
+                .setConstraints(constraints)
+                .addTag("Periodic")
+                .build();
+
+        WorkManager.getInstance(this).enqueue(pRequest);
+
+        WorkManager.getInstance(this).getWorkInfoByIdLiveData(pRequest.getId()).observe(this, new Observer<WorkInfo>() {
+            @Override
+            public void onChanged(WorkInfo workInfo) {
+                Log.d(TAG, "Observer: " + workInfo.getState());
+            }
+        });
+
+        cancel_job.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                WorkManager.getInstance(MainActivity.this).cancelWorkById(pRequest.getId());
+            }
+        });
+
+
+
+
     }
 }
